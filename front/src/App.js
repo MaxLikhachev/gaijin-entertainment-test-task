@@ -1,13 +1,17 @@
-import logo from './logo.svg';
+// import logo from './logo.svg';
 import './App.css';
-import DataGridExtended from './components/DataGridExtended'
+import DataGridContainer from './components/DataGridContainer'
+import {
+  columns,
+  rows,
+} from './data/DataGridTestData'
 
 function App() {
   return (
     <div className="App">{/* 
       <header className="App-header">
       </header> */}
-      <DataGridExtended />
+      <DataGridContainer columns={columns} rows={rows}/>
     </div>
   );
 }
