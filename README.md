@@ -1,0 +1,1 @@
+# gaijin-entertainment-test-task
