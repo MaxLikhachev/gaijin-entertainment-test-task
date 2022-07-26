@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Box from '@mui/material/Box';
 import { DataGrid } from '@mui/x-data-grid';
 import IconButton from '@mui/material/IconButton';
@@ -21,12 +21,23 @@ import {
     DATA_GRID_UPDATE_MODE,
     DATA_GRID_DELETE_MODE
 } from '../data/constants/DataGridConstants'
+import { getSongs, setSong } from '../responses/Responses';
 
 function Toolbar(props) {
-    // console.debug(props)
-
     const [mode, setMode] = React.useState(DATA_GRID_READ_MODE);
     const [open, setOpen] = React.useState(false);
+    const [editionModel, setEditionModel] = React.useState(null);
+    let tempModel = {};
+
+    useEffect(() => {
+        if ((mode === DATA_GRID_UPDATE_MODE || mode === DATA_GRID_CREATE_MODE) && !editionModel) {
+            let emptyModel = props.selectionModel.length > 0 && mode === DATA_GRID_UPDATE_MODE ? props.rows.find(row => row.id === props.selectionModel[0]) : props.rows[0]
+            if (mode === DATA_GRID_CREATE_MODE) { for (let key in emptyModel) { emptyModel[key] = null } }
+            setEditionModel(emptyModel)
+        }
+    }, [props.selectionModel, mode, props.rows, editionModel])
+
+    // console.debug(props.selectionModel, editionModel)
 
     const handleClickOpen = (event, mode) => {
         // console.debug({ ...props.selectionModel, mode: mode });
@@ -35,14 +46,20 @@ function Toolbar(props) {
     };
 
     const handleClose = () => {
+        console.debug(mode, tempModel, editionModel)
+        setEditionModel(tempModel);
+        console.debug(JSON.stringify(tempModel));
+        mode === DATA_GRID_CREATE_MODE && setSong(tempModel)
         setMode(DATA_GRID_READ_MODE);
         setOpen(false);
     };
 
-    function FormDialog() {
-        const [editionModel, setEditionModel] = React.useState(props.selectionModel?.length ? { ...props.rows.find(row => row.id === props.selectionModel[0]) } : {})
+    const FormDialog = () => {
 
-        // console.debug(editionModel, mode)
+        const onChangeTextField = (event, key) => {
+            tempModel = { ...editionModel }
+            tempModel[key] = event.target.value;
+        }
 
         return (
             <Dialog open={open} onClose={handleClose}>
@@ -57,7 +74,8 @@ function Toolbar(props) {
                                 id={column.field}
                                 label={column.headerName}
                                 type={column.type}
-                                defaultValue={mode === DATA_GRID_UPDATE_MODE ? editionModel[column.field] : ''}
+                                defaultValue={mode === DATA_GRID_UPDATE_MODE ? editionModel[column.field] : null}
+                                onChange={(event) => onChangeTextField(event, column.field)}
                                 fullWidth
                                 variant="standard"
                             />) : <DialogContentText>
@@ -108,10 +126,35 @@ function Toolbar(props) {
 
 export default function DataGridContainer(props) {
     const [selectionModel, setSelectionModel] = React.useState([]);
+    const [data, setData] = React.useState([]);
+    const [rows, setRows] = React.useState([]);
+    const [columns, setColumns] = React.useState([]);
+
+    useEffect(() => {
+        if (data.length === 0) {
+            getSongs(setData)
+        }
+    }, [data])
+
+    useEffect(() => {
+        if (rows.length === 0 && data.length > 0) {
+            setRows(data.map(object => ({ ...object.fields, id: object.pk })))
+        }
+    }, [data, rows])
+
+    useEffect(() => {
+        if (rows.length > 0 && data.length > 0 && columns.length === 0) {
+            setColumns(Object.keys(rows[0]).map(key => ({
+                field: key,
+                headerName: key,
+                editable: false
+            })))
+        }
+    }, [data, rows, columns])
 
     const options = {
-        rows: props.rows,
-        columns: props.columns,
+        rows: rows,
+        columns: columns,
         pageSize: 5,
         rowsPerPageOptions: [5],
         checkboxSelection: true,
@@ -121,15 +164,14 @@ export default function DataGridContainer(props) {
         editRowsModel: {},
         onSelectionModelChange: (newSelectionModel) => {
             setSelectionModel(newSelectionModel);
-            // console.debug(newSelectionModel);
         },
         components: {
             Toolbar: Toolbar,
         },
         componentsProps: {
             toolbar: {
-                rows: props.rows,
-                columns: props.columns,
+                rows: rows,
+                columns: columns,
                 selectionModel: selectionModel,
             }
         }
