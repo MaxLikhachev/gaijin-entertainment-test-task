@@ -21,7 +21,7 @@ import {
     DATA_GRID_UPDATE_MODE,
     DATA_GRID_DELETE_MODE
 } from '../data/constants/DataGridConstants'
-import { getSongs, setSong } from '../responses/Responses';
+import { createSong, readSongs, deleteSong } from '../responses/Responses';
 
 function Toolbar(props) {
     const [mode, setMode] = React.useState(DATA_GRID_READ_MODE);
@@ -42,6 +42,8 @@ function Toolbar(props) {
     const handleClickOpen = (event, mode) => {
         // console.debug({ ...props.selectionModel, mode: mode });
         setMode(mode);
+        console.debug(props.selectionModel)
+        mode === DATA_GRID_DELETE_MODE && deleteSong(props.selectionModel.map(id => ({'id': id})));
         setOpen(true);
     };
 
@@ -49,7 +51,7 @@ function Toolbar(props) {
         console.debug(mode, tempModel, editionModel)
         setEditionModel(tempModel);
         console.debug(JSON.stringify(tempModel));
-        mode === DATA_GRID_CREATE_MODE && setSong(tempModel)
+        mode === DATA_GRID_CREATE_MODE && createSong(tempModel);
         setMode(DATA_GRID_READ_MODE);
         setOpen(false);
     };
@@ -132,7 +134,7 @@ export default function DataGridContainer(props) {
 
     useEffect(() => {
         if (data.length === 0) {
-            getSongs(setData)
+            readSongs(setData)
         }
     }, [data])
 

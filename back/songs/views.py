@@ -16,4 +16,7 @@ def index(request):
         print(**json.loads(request.body))
         Song.objects.create(**json.loads(request.body))
         return HttpResponse(serializers.serialize('json', ''), content_type='application/json')
-    # return HttpResponse("Hello, world. You're at the songs index.")
+    if request.method == 'DELETE':
+        for object in json.loads(request.body):
+            Song.objects.filter(id=object['id']).delete()
+        return HttpResponse(serializers.serialize('json', ''), content_type='application/json')
