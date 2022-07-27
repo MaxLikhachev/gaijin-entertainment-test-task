@@ -24,110 +24,182 @@ import {
 import { createSong, readSongs, updateSong, deleteSong } from '../responses/Responses';
 
 function Toolbar(props) {
-    const [mode, setMode] = React.useState(DATA_GRID_READ_MODE);
-    const [open, setOpen] = React.useState(false);
-    const [editionModel, setEditionModel] = React.useState(null);
-    let tempModel = {};
+    const [selectionModel, setSelectionModel] = React.useState([])
+    const [mode, setMode] = React.useState(null);
+    const [modes, setModes] = React.useState([]);
 
     useEffect(() => {
-        if ((mode === DATA_GRID_UPDATE_MODE || mode === DATA_GRID_CREATE_MODE) && !editionModel) {
-            let emptyModel = props.selectionModel.length > 0 && mode === DATA_GRID_UPDATE_MODE ? props.rows.find(row => row.id === props.selectionModel[0]) : props.rows[0]
-            if (mode === DATA_GRID_CREATE_MODE) { for (let key in emptyModel) { emptyModel[key] = null } }
-            setEditionModel(emptyModel)
+        if (selectionModel !== props.selectionModel) {
+            setModes(props.selectionModel.length > 0 ?
+                props.selectionModel.length === 1 ?
+                    [DATA_GRID_READ_MODE, DATA_GRID_CREATE_MODE, DATA_GRID_UPDATE_MODE, DATA_GRID_DELETE_MODE]
+                    : [DATA_GRID_READ_MODE, DATA_GRID_CREATE_MODE, DATA_GRID_DELETE_MODE]
+                : [DATA_GRID_READ_MODE, DATA_GRID_CREATE_MODE]);
+            setMode(DATA_GRID_READ_MODE)
+            setSelectionModel(props.selectionModel);
         }
-    }, [props.selectionModel, mode, props.rows, editionModel])
+    }, [props.selectionModel, selectionModel])
 
-    // console.debug(props.selectionModel, editionModel)
-
-    const handleClickOpen = (event, mode) => {
-        // console.debug({ ...props.selectionModel, mode: mode });
-        setMode(mode);
-        console.debug(props.selectionModel)
-        mode === DATA_GRID_DELETE_MODE && deleteSong(props.selectionModel.map(id => ({'id': id})));
-        setOpen(true);
-    };
-
-    const handleClose = () => {
-        console.debug(mode, tempModel, editionModel)
-        setEditionModel(tempModel);
-        console.debug(JSON.stringify(tempModel));
-        mode === DATA_GRID_CREATE_MODE && createSong(tempModel);
-        mode === DATA_GRID_UPDATE_MODE && updateSong(tempModel);
-        setMode(DATA_GRID_READ_MODE);
-        setOpen(false);
-    };
-
-    const FormDialog = () => {
-
-        const onChangeTextField = (event, key) => {
-            tempModel = { ...editionModel }
-            tempModel[key] = event.target.value;
-        }
-
-        console.debug(editionModel)
-
-        return (
-            <Dialog open={open} onClose={handleClose}>
-                <DialogTitle>{mode === DATA_GRID_CREATE_MODE ? 'Добавить' : mode === DATA_GRID_UPDATE_MODE ? 'Редактировать' : 'Удалить'}</DialogTitle>
-                <DialogContent>
-                    {mode === DATA_GRID_CREATE_MODE || mode === DATA_GRID_UPDATE_MODE ?
-                        props.columns.map((column, index) =>
-                            <TextField
-                                autoFocus
-                                margin="dense"
-                                key={column.field}
-                                id={column.field}
-                                label={column.headerName}
-                                type={column.type}
-                                defaultValue={editionModel && editionModel[column.field] ? editionModel[column.field] : null}
-                                onChange={(event) => onChangeTextField(event, column.field)}
-                                fullWidth
-                                variant="standard"
-                            />) : <DialogContentText>
-                            {`Подтвердить удаление ${props.selectionModel.length} объект${props.selectionModel.length === 1 ? 'а' : 'ов'}?`}
-                        </DialogContentText>
-                    }
-
-                </DialogContent>
-                <DialogActions>
-                    {mode === DATA_GRID_CREATE_MODE || mode === DATA_GRID_UPDATE_MODE ? <Tooltip title="Save" >
-                        <IconButton color="success" onClick={handleClose}>
-                            <SaveIcon />
-                        </IconButton>
-                    </Tooltip> :
-                        <>
-                            <Tooltip title="Confirm deleting" >
-                                <IconButton color="error" onClick={handleClose}>
-                                    <DoneIcon />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Cancel deleting" >
-                                <IconButton color="success" onClick={handleClose} autoFocus>
-                                    <CancelIcon />
-                                </IconButton>
-                            </Tooltip>
-                        </>
-                    }
-                </DialogActions>
-            </Dialog>
-        );
+    const options = {
+        tools: [{
+            label: "Добавить",
+            color: "primary",
+            mode: DATA_GRID_CREATE_MODE,
+            icon: <AddIcon />
+        }, {
+            label: "Редактировать",
+            color: "warning",
+            mode: DATA_GRID_UPDATE_MODE,
+            icon: <EditIcon />
+        }, {
+            label: "Удалить",
+            color: "error",
+            mode: DATA_GRID_DELETE_MODE,
+            icon: <DeleteIcon />
+        }]
     }
+
+    const formDialogProps = {
+        mode,
+        setMode,
+        selectionModel,
+        ...props
+    }
+
+    const onClickModeChangeHandler = (event, value) => setMode(value)
 
     return (
         <Box sx={{ display: 'flex', p: 1 }}>
-            <IconButton color="primary" aria-label="Add" onClick={(event) => handleClickOpen(event, DATA_GRID_CREATE_MODE)}>
-                <AddIcon />
-            </IconButton>
-            {props.selectionModel?.length && props.selectionModel.length === 1 ? <IconButton color="warning" aria-label="Edit" onClick={(event) => handleClickOpen(event, DATA_GRID_UPDATE_MODE)}>
-                <EditIcon />
-            </IconButton> : ''}
-            {props.selectionModel?.length ? <IconButton color="error" aria-label="Add" onClick={(event) => handleClickOpen(event, DATA_GRID_DELETE_MODE)}>
-                <DeleteIcon />
-            </IconButton> : ''}
-            <FormDialog />
+            {modes.map((mode, index, array, option = options.tools.find(tool => tool.mode === mode)) =>
+                option && <Tooltip
+                    key={index}
+                    title={option.label}>
+                    <IconButton
+                        onClick={event => onClickModeChangeHandler(event, option.mode)}
+                        {...option}>
+                        {option.icon}
+                    </IconButton>
+                </Tooltip>
+            )}
+            {mode && mode !== DATA_GRID_READ_MODE && <FormDialog {...formDialogProps} />}
         </Box>
     );
 }
+
+const FormDialog = (props) => {
+    const [mode, setMode] = React.useState(null);
+    const [open, setOpen] = React.useState(false);
+    const [editionModel, setEditionModel] = React.useState([]);
+
+    useEffect(() => {
+        if (mode !== props.mode) {
+            setMode(props.mode);
+            if (props.mode === DATA_GRID_CREATE_MODE) {
+                setEditionModel(props.columns.map((column) => ''));
+            }
+            if (props.mode === DATA_GRID_UPDATE_MODE) {
+                const tempModel = [];
+                for (const [key, value] of Object.entries(props.rows.find(row => row.id = props.selectionModel[0])))
+                    tempModel.push(value);
+                setEditionModel(tempModel);
+            }
+            setOpen(true);
+        }
+    }, [mode, props])
+
+    const modelToObjectConverter = () => {
+        const object = {};
+        if (mode !== DATA_GRID_DELETE_MODE) {
+            props.columns.forEach((column, index) => object[column.field] = editionModel[index] !== '' ? editionModel[index] : null);
+            return object;
+        }
+        else return props.selectionModel.map((id) => ({ 'id': id }));
+    }
+
+    const onClickSaveHandler = () => {
+        switch (mode) {
+            case DATA_GRID_CREATE_MODE: createSong(modelToObjectConverter()); break;
+            case DATA_GRID_UPDATE_MODE: updateSong(modelToObjectConverter()); break;
+            case DATA_GRID_DELETE_MODE: deleteSong(modelToObjectConverter()); break;
+            default: break;
+        }
+        props.setData([]);
+        onClickCloseHandler();
+    };
+
+    const onClickCloseHandler = () => {
+        setOpen(false);
+        props.setMode(DATA_GRID_READ_MODE);
+    };
+
+    const options = {
+        title: mode === DATA_GRID_CREATE_MODE ? 'Добавить' : mode === DATA_GRID_UPDATE_MODE ? 'Редактировать' : 'Удалить',
+        dialogContextText: `Подтвердить удаление ${props.selectionModel.length} объект${props.selectionModel.length === 1 ? 'а' : 'ов'}?`,
+        textFields: props.columns.map((column, index) => ({
+            autoFocus: true,
+            margin: "dense",
+            key: column.field,
+            id: column.field,
+            label: column.headerName,
+            type: column.type,
+            value: editionModel[index],
+            fullWidth: true,
+            variant: "standard",
+        })),
+        actions: [{
+            label: "Сохранить",
+            color: "success",
+            modes: [DATA_GRID_CREATE_MODE, DATA_GRID_UPDATE_MODE],
+            onClick: onClickSaveHandler,
+            icon: <SaveIcon />
+        }, {
+            label: "Подтвердить",
+            color: "error",
+            modes: [DATA_GRID_DELETE_MODE],
+            onClick: onClickSaveHandler,
+            icon: <DoneIcon />
+        }, {
+            label: "Отменить",
+            color: "primary",
+            onClick: onClickCloseHandler,
+            modes: [DATA_GRID_CREATE_MODE, DATA_GRID_UPDATE_MODE, DATA_GRID_DELETE_MODE],
+            icon: <CancelIcon />
+        }]
+    }
+
+    const onChangeTextFieldHandler = (event, index) => {
+        const tempModel = [...editionModel]
+        tempModel[index] = event.target.value
+        setEditionModel(tempModel)
+    }
+
+    return (
+        <Dialog open={open} onClose={onClickCloseHandler}>
+            <DialogTitle>{options.title}</DialogTitle>
+            <DialogContent>
+                {mode === DATA_GRID_CREATE_MODE || mode === DATA_GRID_UPDATE_MODE ?
+                    options.textFields.map((option, index) =>
+                        <TextField
+                            onChange={event => onChangeTextFieldHandler(event, index)}
+                            {...option} />)
+                    : <DialogContentText>
+                        {options.dialogContextText}
+                    </DialogContentText>
+                }
+            </DialogContent>
+            <DialogActions>
+                {options.actions.map((action, index) => action.modes.find(visiblemode => mode === visiblemode) && (
+                    <Tooltip title={action.label} key={index}>
+                        <IconButton {...action}>
+                            {action.icon}
+                        </IconButton>
+                    </Tooltip>
+                ))}
+            </DialogActions>
+        </Dialog>
+    );
+}
+
 
 export default function DataGridContainer(props) {
     const [selectionModel, setSelectionModel] = React.useState([]);
@@ -143,7 +215,7 @@ export default function DataGridContainer(props) {
 
     useEffect(() => {
         if (rows.length === 0 && data.length > 0) {
-            setRows(data.map(object => ({ ...object.fields, id: object.pk })))
+            setRows(data.map(object => ({ id: object.pk, ...object.fields })))
         }
     }, [data, rows])
 
@@ -177,6 +249,7 @@ export default function DataGridContainer(props) {
             toolbar: {
                 rows: rows,
                 columns: columns,
+                setData: setData,
                 selectionModel: selectionModel,
             }
         }

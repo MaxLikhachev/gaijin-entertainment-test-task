@@ -33,5 +33,3 @@ export const updateSong = async (data = null, url = URL + '/songs/') => await fe
         'Content-Type': 'application/json'
     }
 }).then(response => response.json()).then(console.log);
-
-// export const dispatch = (request, set, data) => request(data).then(set).catch(console.debug);
