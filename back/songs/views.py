@@ -9,18 +9,15 @@ from .models import Song
 
 
 @csrf_exempt
-def index(request):
+def index(request, data={'status': 'Successfully done!'}):
     if request.method == 'GET':
-        return HttpResponse(serializers.serialize('json', Song.objects.all()), content_type='application/json')
-    if request.method == 'POST':
-        print(json.loads(request.body))
+        data = Song.objects.all()
+    elif request.method == 'POST':
         Song.objects.create(**json.loads(request.body))
-        return HttpResponse(serializers.serialize('json', ''), content_type='application/json')
-    if request.method == 'PUT':
-        print(json.loads(request.body))
-        Song.objects.filter(id=json.loads(request.body)['id']).update(**json.loads(request.body))
-        return HttpResponse(serializers.serialize('json', ''), content_type='application/json')
-    if request.method == 'DELETE':
+    elif request.method == 'PUT':
+        Song.objects.filter(id=json.loads(request.body)['id']).update(
+            **json.loads(request.body))
+    elif request.method == 'DELETE':
         for object in json.loads(request.body):
             Song.objects.filter(id=object['id']).delete()
-        return HttpResponse(serializers.serialize('json', ''), content_type='application/json')
+    return HttpResponse(serializers.serialize('json', data), content_type='application/json')

@@ -44,19 +44,16 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
-CORS_ALLOW_CREDENTIALS = True
+# CORS settings
 
-CORS_ORIGIN_WHITELIST = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-]
+CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
 ]
 
-CSRF_TRUSTED_ORIGINS = [
+CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
 ]
@@ -80,6 +77,13 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
+]
+
+# CSRF settings
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
 ]
 
 MIDDLEWARE = [
