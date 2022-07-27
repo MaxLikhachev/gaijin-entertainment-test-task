@@ -25,4 +25,13 @@ export const deleteSong = async (data = null, url = URL + '/songs/') => await fe
     }
 }).then(response => response.json()).then(console.log);
 
+export const updateSong = async (data = null, url = URL + '/songs/') => await fetch(url, {
+    method: 'PUT',
+    mode: 'cors',
+    body: JSON.stringify(data),
+    headers: {
+        'Content-Type': 'application/json'
+    }
+}).then(response => response.json()).then(console.log);
+
 // export const dispatch = (request, set, data) => request(data).then(set).catch(console.debug);

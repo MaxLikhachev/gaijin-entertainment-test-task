@@ -21,7 +21,7 @@ import {
     DATA_GRID_UPDATE_MODE,
     DATA_GRID_DELETE_MODE
 } from '../data/constants/DataGridConstants'
-import { createSong, readSongs, deleteSong } from '../responses/Responses';
+import { createSong, readSongs, updateSong, deleteSong } from '../responses/Responses';
 
 function Toolbar(props) {
     const [mode, setMode] = React.useState(DATA_GRID_READ_MODE);
@@ -52,6 +52,7 @@ function Toolbar(props) {
         setEditionModel(tempModel);
         console.debug(JSON.stringify(tempModel));
         mode === DATA_GRID_CREATE_MODE && createSong(tempModel);
+        mode === DATA_GRID_UPDATE_MODE && updateSong(tempModel);
         setMode(DATA_GRID_READ_MODE);
         setOpen(false);
     };
@@ -62,6 +63,8 @@ function Toolbar(props) {
             tempModel = { ...editionModel }
             tempModel[key] = event.target.value;
         }
+
+        console.debug(editionModel)
 
         return (
             <Dialog open={open} onClose={handleClose}>
@@ -76,7 +79,7 @@ function Toolbar(props) {
                                 id={column.field}
                                 label={column.headerName}
                                 type={column.type}
-                                defaultValue={mode === DATA_GRID_UPDATE_MODE ? editionModel[column.field] : null}
+                                defaultValue={editionModel && editionModel[column.field] ? editionModel[column.field] : null}
                                 onChange={(event) => onChangeTextField(event, column.field)}
                                 fullWidth
                                 variant="standard"
